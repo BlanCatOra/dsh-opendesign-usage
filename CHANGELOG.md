@@ -36,12 +36,14 @@
   - ⚠️ **旧说法"第三方插件禁止 require 任何 Harness Client 包、只能抄 markup/CSS"已作废** ——
     那是把白屏事故归错了因（真因是漏声明 `inject` 服务名）。唯一的红线是
     **seed 表 9 模块白名单**，现由构建期守卫强制。
-- **设置从 `settings.section` 迁到 `plugins.item`（插件详情页）**。
+- **设置从 `settings.section` 迁到 `plugins.bundle.config`（插件详情页）**。
   权威原句（`dsh-client-ui-plugin-manager/README.zh.md`）：「注册了配置页的插件在这里、
   在它自己的页面上编辑；设置里只保留只读的插件列表。」
   用官方范式 `ctx.configForms.whileServed(...)` 跟随命名空间上线/下线边沿。
   为此 `inject` 新增 `configForms`（由 `@deepseek-ai/dsh-client-ui-settings` 提供，
   该包已在 `dsh.client.inject` 里）。
+  ⚠️ **不要用 `plugins.item`**：按 README 原文那是「用于**官方插件**，按其 label 列在
+  **内置插件配置分组**里」—— 第三方插件注册到那里会出现在「内置插件配置」下（实测踩过）。
 - 新增构建期守卫白名单（`SEED_MODULES`，9 个），并给客户端 bundle 加
   `dsh.client.immediately: true`（见下）。
 - 删除 `src/settings-section.js`（867 行自写 UI），由 `src/plugin-settings-card.js` 取代。

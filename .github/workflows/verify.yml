@@ -1,0 +1,42 @@
+# 与 .githooks/pre-push 做同样的三件事。
+#
+# 为什么还要这一份：pre-push 依赖 `core.hooksPath`，而它存在 `.git/config`
+# 这个**不进版本控制**的本地文件里。别人 clone 之后闸门默认不存在，
+# `--no-verify` 也能跳过。CI 是唯一不依赖本地配置、且对每台机器都生效的那一道。
+#
+# 本地钩子负责"快"（推之前就拦），CI 负责"稳"（绕不过去）。
+name: verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装依赖
+        run: npm install --no-audit --no-fund
+
+      - name: 重建 bundle
+        run: node src/build-client.mjs
+
+      - name: 产物必须与 src 同源（不允许提交过期 bundle）
+        run: |
+          if ! git diff --quiet -- lib; then
+            echo "::error::lib/client.js 与 src/ 不同源——请重建并提交产物"
+            git status --short -- lib
+            exit 1
+          fi
+
+      - name: 语法检查
+        run: npm run check
+
+      - name: 全量测试（含 inject 静态守卫）
+        run: node --test test/*.test.mjs

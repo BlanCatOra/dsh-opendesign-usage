@@ -1,0 +1,77 @@
+{
+  "name": "dsh-opendesign-usage",
+  "displayName": "DSH Open Design Usage",
+  "description": "在 DeepSeek Harness 的输入框显示 Open Design 的套餐额度（5 小时 / 7 天窗口）与本会话 token 用量；仅当会话选中 opendesign 模型时出现，全部功能可在插件详情页自行开关。",
+  "version": "0.2.0",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "blancatora",
+    "email": "blancatora@agent.qq.com",
+    "url": "https://github.com/BlanCatOra"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "opendesign",
+    "usage",
+    "quota",
+    "token-usage"
+  ],
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "src",
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "README.en.md",
+    "CREDITS.md",
+    "locale",
+    "icon.svg"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "build": "node src/build-client.mjs",
+    "//test": "先重建 bundle：接线层测的是 lib/client.js（真实产物），不是 src/",
+    "test": "node src/build-client.mjs && node --test test/*.test.mjs",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/constants.js && node --check src/client.js && node --check src/boot-diagnostics.js",
+    "//prepare": "让 clone 者自动启用 .githooks（core.hooksPath 不进版本控制）",
+    "//prepare-fail": "失败时**必须出声**：静默 || true 会让用户以为闸门已在，实际没有",
+    "prepare": "node scripts/enable-hooks.mjs"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.4"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.1-rc.1 <5.0.0 || >=4.0.2 <5.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
+    }
+  },
+  "icon": "./icon.svg"
+}

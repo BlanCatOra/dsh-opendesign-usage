@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Open Design 用量",
+    "description": "在输入框显示 Open Design 的套餐额度（5 小时 / 7 天）与本会话 token 用量；仅在会话选中 opendesign 模型时出现。"
+  }
+}

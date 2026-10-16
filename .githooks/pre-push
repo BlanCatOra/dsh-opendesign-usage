@@ -1,0 +1,48 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────────
+# 推送前的硬闸。
+#
+# 为什么需要它（2026-10-15 实测事故）：本插件曾经在真机上**从未注册过任何表面**
+# —— `apply` 读 `ctx.import` 抛 `cannot get property "import" without inject`，
+# 被 try/catch 吞掉后直接 return；而测试因为自己塞了假 `ctx.import` 通道而全绿。
+# 「测试全绿、真机全废」这类缺陷一旦推上公开仓库，别人装了就白屏或没反应。
+#
+# 所以推送前必须同时满足：
+#   1. 静态守卫：源码里每个 `ctx.<service>` 都在导出的 `inject` 里，
+#      且不再出现 `ctx.import` / `ctx.require`；
+#   2. 全量测试通过（含真实 bundle 的接线层）；
+#   3. 重建 bundle 后工作区是干净的（不推送与 src 不一致的产物）。
+#
+# 确实要跳过（例如只推文档）时显式写：`git push --no-verify`
+# ─────────────────────────────────────────────────────────────────────────────
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-push: 找不到 node，无法验证。装了 node 再推（或用 --no-verify 明确跳过）。" >&2
+  exit 1
+fi
+
+echo "pre-push: 重建 bundle …"
+node src/build-client.mjs >/dev/null
+
+echo "pre-push: 静态守卫 + 全量测试 …"
+if ! node --test test/*.test.mjs >/tmp/dsh-opendesign-usage-pretest.log 2>&1; then
+  echo "pre-push: ❌ 测试未通过，拒绝推送。日志：/tmp/dsh-opendesign-usage-pretest.log" >&2
+  tail -30 /tmp/dsh-opendesign-usage-pretest.log >&2
+  exit 1
+fi
+
+# 重建后再校验一次产物：`lib/client.js` 必须与已提交版本一致。
+# 只查 lib 而不是 src —— src 有未提交改动是作者的自由，但只要 src 变了、产物没跟着提交，
+# 这里就会红（这正是"推上去的 bundle 与源码对不上"的情形）。
+git update-index -q --refresh || true
+if ! git diff --quiet -- lib; then
+  echo "pre-push: ❌ 重建后 lib/ 与已提交版本不一致，拒绝推送：" >&2
+  git status --short -- lib >&2
+  echo "请把重建产物一并提交后再推（bundle 必须与 src 同源）。" >&2
+  exit 1
+fi
+
+echo "pre-push: ✅ 守卫与测试都通过。"

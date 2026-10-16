@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" role="img" aria-label="Open Design Usage">
+  <!--
+    dsh-opendesign-usage 的插件图标。
+
+    设计：一条量度刻度弧 + 中心读数，呼应插件本身"读用量"的职责。
+    配色：固定色（规范允许插画使用自有配色，不必跟随主题 token）——
+    取自 Open Design 控制台的主色相，与 DSH 默认插画风格并存。
+  -->
+  <defs>
+    <linearGradient id="odu-arc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5B8DEF" />
+      <stop offset="100%" stop-color="#7C5BEF" />
+    </linearGradient>
+  </defs>
+
+  <!-- 底：圆角方形 -->
+  <rect x="0" y="0" width="36" height="36" rx="9" fill="#1B2233" />
+
+  <!-- 量度弧（5 小时 / 7 天两个窗口的意象：两段弧） -->
+  <path d="M8 24 A 10 10 0 0 1 28 24" fill="none" stroke="url(#odu-arc)" stroke-width="3.2"
+        stroke-linecap="round" />
+  <path d="M13.2 24 A 4.8 4.8 0 0 1 22.8 24" fill="none" stroke="#8FA3C8" stroke-width="2.4"
+        stroke-linecap="round" opacity="0.75" />
+
+  <!-- 中心读数点：表示"当前用量" -->
+  <circle cx="18" cy="24" r="2.1" fill="#E8EEF9" />
+
+  <!-- 刻度：三段小竖线，暗示百分比刻度 -->
+  <g stroke="#8FA3C8" stroke-width="1.5" stroke-linecap="round" opacity="0.6">
+    <line x1="7" y1="14" x2="7" y2="17" />
+    <line x1="29" y1="14" x2="29" y2="17" />
+  </g>
+</svg>

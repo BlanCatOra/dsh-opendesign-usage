@@ -1,0 +1,8 @@
+# 把 dsh-opendesign-usage 注册进 profile。
+#
+# 插件自身不声明任何 provider —— 它读的是 profile 里已有的 opendesign
+# provider（见 cordis.patch.yml 的 llm-pi-ai 段），只是在输入框多一个
+# 只读的用量读数。
+- insert:
+    - id: dsh-opendesign-usage
+      name: dsh-opendesign-usage

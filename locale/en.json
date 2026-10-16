@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Open Design Usage",
+    "description": "Shows your Open Design plan quota (5-hour / 7-day windows) and this session's token usage in the composer; appears only when the session's model belongs to the opendesign provider."
+  }
+}

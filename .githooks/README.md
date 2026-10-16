@@ -3,21 +3,30 @@
 ## 怎么启用
 
 `git config core.hooksPath` 存在 **`.git/config`** 里，那是不进版本控制的本地文件，
-所以 clone 之后**默认没有这道闸门**。三选一：
+所以 clone 之后**默认没有这道闸门**。二选一：
 
 ```sh
-# 1) 装了依赖就会自动启用（package.json 的 prepare 钩子）
-npm install        # 或 pnpm install
-
-# 2) 手动启用（--ignore-scripts 安装、或 prepare 失败时）
+# 1) 手动启用（推荐）—— clone 之后跑一次即可
+node scripts/enable-hooks.mjs
+#    或等价地：
 git config core.hooksPath .githooks
 
-# 3) 什么都不做 —— CI 会做同样的三项检查，只是要等推上去之后才知道
+# 2) 什么都不做 —— CI 会做同样的三项检查，只是要等推上去之后才知道
 ```
 
-> ⚠️ `pnpm install --ignore-scripts` **不会**跑 `prepare`。那种情况下请用手动方式 2。
-> `scripts/enable-hooks.mjs` 在装不上时会打印显眼警告，不会静默假装成功 ——
-> 静默失效的防线比没有防线更危险。
+⚠️ **为什么不放在 `prepare` 里自动启用**（2026-10-16 实测教训）：
+
+`prepare` 不只在本仓库 `install` 时跑，**pnpm 对被当作依赖安装的 git 包也会跑它**。
+于是这个"给开发者的小工具"变成了**安装门槛** —— 任何人用
+`pnpm add github:<user>/dsh-opendesign-usage` 或 DSH GUI 的「添加插件（Git 地址）」
+都会撞上：
+
+```
+ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED … is not in the "allowBuilds" allowlist
+```
+
+**规矩：`prepare` 里不要放只对开发者有意义的东西。** 要为发布前把关，
+用 `prepublishOnly`（仅 `npm publish` 时执行，不影响任何人的安装）。
 
 ## pre-push 拦什么
 

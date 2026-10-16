@@ -47,9 +47,8 @@
     "//test": "先重建 bundle：接线层测的是 lib/client.js（真实产物），不是 src/",
     "test": "node src/build-client.mjs && node --test test/*.test.mjs",
     "check": "node --check src/index.js && node --check src/config.js && node --check src/constants.js && node --check src/client.js && node --check src/boot-diagnostics.js",
-    "//prepare": "让 clone 者自动启用 .githooks（core.hooksPath 不进版本控制）",
-    "//prepare-fail": "失败时**必须出声**：静默 || true 会让用户以为闸门已在，实际没有",
-    "prepare": "node scripts/enable-hooks.mjs"
+    "//hooks": "git 钩子（core.hooksPath）不进版本控制；clone 后手动跑一次：node scripts/enable-hooks.mjs",
+    "prepublishOnly": "node src/build-client.mjs && node --test test/*.test.mjs"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "3.18.4"

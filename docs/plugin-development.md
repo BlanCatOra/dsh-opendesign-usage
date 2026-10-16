@@ -3,10 +3,12 @@
 > 本文是**可照着执行的 checklist**，不是导论。每条「必须 / 禁止」都追溯到一次真实事故，
 > 按 **现象 → 机制 → 正确做法** 三段写。
 >
-> **事实来源**：2026-10-15 本插件在真机上「从未注册过任何表面」的完整事故
-> （见仓库根目录 `HANDOFF-inject-and-react-20261015.md`），以及同日
+> **事实来源**：本插件在真机上「从未注册过任何表面」的完整事故，以及
 > `dsh-enhanced-prompt-editor` 因同一类缺陷把整个 DSH 打白屏的事故。
 > 机制部分在 DSH 安装包 `app.asar` 里逐条比对过源码，各节标注了出处。
+>
+> 每条结论都可以**自己去核**：按文末附录的脚本把 `app.asar` 里的对应文件取出来，
+> 或直接读你本机 `node_modules/@deepseek-ai/` 下的官方插件源码。
 >
 > 标注「**未验证**」的条目表示：机制推断合理但本轮没有实测证据，不要当成已知事实引用。
 
@@ -38,7 +40,7 @@
 | `package.json` 的 `dsh.client.inject` | **包名** | 只管**模块加载顺序** |
 | 插件自己导出的 `inject` | **服务名** | cordis 的**服务访问白名单** |
 
-`ctx` 是 cordis 的代理对象，`get` 陷阱的逻辑是（`HANDOFF` 第 2 节引用的 asar 源码）：
+`ctx` 是 cordis 的代理对象，`get` 陷阱的逻辑是（asar 里 cordis `Context` 的 proxy 源码，取法见文末附录）：
 
 ```js
 get: (target, prop, ctx) => {
@@ -70,9 +72,16 @@ crash log 里只有 `<包名>: failed`，**没有堆栈**（异常交给了渲�
   它是 Context 自带方法，**不受这道闸限制**，服务没到就返回 `undefined`。
   **不要**为了探测把它写进 `inject`。
 
-本插件实例：`src/client.js` 里 `export const inject = ['slots', 'locale']`；
-而「设置命名空间可能还没到」的 `configForms`、host 侧「可能没有 webServer」的场景，
-都走 `ctx.get(...)`（见 `HANDOFF` 第 3 节）。
+本插件实例：`src/client.js` 里 `export const inject = ['slots', 'locale', 'configForms']`。
+
+⚠️ **`configForms` 是"声明 + 探测"并存的**（2026-10-16 修正）：
+设置注册改用官方 `whileServed` 范式后需要读 `ctx.configForms` **属性**，
+不声明它会抛 `cannot get property "configForms" without inject`，所以它**进了 `inject`**；
+同时 `apply` 内部仍用 `ctx.get?.('configForms')` 做能力探测兜底（服务缺席时降级而不是挂掉）。
+两者不矛盾：**声明**保证"服务在时我们才 activate"，`ctx.get` 保证"读属性万一失败也不抛"。
+
+host 侧「可能没有 `webServer`」的场景**只走** `ctx.get(...)`，不写进 `inject`
+（写进去＝绑死成必需依赖）。
 
 ### 配套自动化（必做）
 
@@ -118,7 +127,7 @@ crash log 里只有 `<包名>: failed`，**没有堆栈**（异常交给了渲�
   ~/.dsh/bin/dsh-boot-report --key odp     # 退出码 0=ok，2=有失败步骤
   ```
 
-  报告形如（真实输出，`HANDOFF` 第 6 节）：
+  报告形如（真实输出）：
 
   ```json
   {
@@ -412,11 +421,71 @@ const selection = enabled ? useProjection('modelSelection') : undefined;
 - 组件内部该守卫的地方自己守卫，不要指望框架兜；
 - 组件渲染路径上不要做可能抛错的同步 IO / 断言。
 
-### 8.3 `settings.section`
+### 8.3 插件设置注册到 `plugins.bundle.config`，**不是** `settings.section`
 
-- 是 `list` / root；
-- **注册无条件**，用 gate 返回 `null` 决定是否显示。
-  即「先注册，后决定显示与否」，而不是「按条件决定注册不注册」。
+> ⚠️ 本节 2026-10-16 **整节重写**。旧版写的是「注册到 `settings.section`」—— **那是错的**，
+> 第三方插件注册到那里会出现在「设置」总页里，而那是官方领域基座的位置。
+
+**权威依据**：内核 `dsh-client-ui-plugin-manager/README.zh.md` 原文：
+
+> 「**注册了配置页的插件在这里、在它自己的页面上编辑；设置里只保留只读的插件列表。**」
+
+也就是说用户路径是 **侧栏「插件」→ 找到你的插件 → 在它自己的页面里配置**。
+
+#### 三个 `plugins.*` 子插槽的分工（别用错）
+
+内核详情页的实际渲染代码（`dsh-client-ui-plugin-manager/lib/client.js`）：
+
+```js
+<section data-plugin-config>
+  renderSlot("plugins.bundle.config", { view: "page" }, { entryKey: pkg.name })
+</section>
+…
+<RowsSection rows={pkg.rows} … configure />
+```
+
+| 插槽 | 渲染位置 | 键 | 谁用 |
+|---|---|---|---|
+| **`plugins.bundle.config`** | **插件详情页**的配置区（`view:"page"`） | **包名**（`entryKey`） | **第三方插件设置该用这个** |
+| `plugins.row.config` | 该**行**展开出的独立页面 | `<包名>#<行 id>` | 组合包里某一行的配置 |
+| `plugins.item` | 「**内置插件配置**」分组 | — | **官方插件**（README 原文如此） |
+
+⚠️ **踩过的坑**：我最初用 `plugins.item`，结果设置出现在「内置插件配置」分组里
+（用户反馈"不该注册到内置插件配置"）。它的 README 原文是
+「用于**官方插件**，按其 label 列在**内置插件配置**分组里」—— 第三方用它就是错位。
+
+⚠️ **keyed 槽不带 `label`**：`plugins.bundle.config` / `plugins.row.config` 是 **keyed** 槽
+（用 `key` 而不是 list 槽的 `id`），**详情页自己画标题/图标/面包屑**。
+官方范式只有 `{ name, key, locale }` 三项。
+
+#### 范式（照抄官方 `dsh-client-ui-settings-subagent`）
+
+```js
+const inject = ["slots", "locale", "configForms"];   // 服务名，与 ctx.* 一一对应
+
+ctx.effect(() => ctx.configForms.whileServed([NS], () =>
+  ctx.slots.inject("plugins.bundle.config", () => ctx.slots.register({
+    name: "plugins.bundle.config",
+    key: PLUGIN_ID,              // ← 包名
+    locale: PLUGIN_ID,
+    inject: () => ({ t, ctx }),
+  }, SettingsCard))), "settings card");
+```
+
+⚠️ **`whileServed` 是关键，不能省**：设置命名空间由 Host 异步 serve，可能晚于 `apply`
+到达、也可能中途下线。`apply` 时读一次快照会拿到"命名空间未就绪"的默认值且**永不更新**
+—— 这正是 `dsh-connect-workbuddy` 4.3.0「设置页改了没用」的形状。
+
+`package.json` 需同时声明提供这些服务的官方包，否则服务要等下一轮 refresh 才到：
+
+```json
+"dsh": { "client": { "platform": "web", "immediately": true, "inject": [
+  "@deepseek-ai/dsh-client-ui-slots",
+  "@deepseek-ai/dsh-client-locale",
+  "@deepseek-ai/dsh-client-ui-settings",
+  "@deepseek-ai/dsh-client-ui-plugin-manager"
+] } }
+```
 
 ---
 
@@ -449,6 +518,76 @@ import: (name) => { if (name === 'react') return react; /* … */ },
 
 ---
 
+## 9.5 注入了但**没调用**：最隐蔽的一类静默失效
+
+### 现象
+
+控件渲染正常、可点、`pointerEvents: auto`、DOM 命中测试通过（`elementFromPoint`
+命中的就是它自己），但**点它毫无反应**。用户描述会是「点击无效」。
+
+### 机制（2026-10-16 实测，本项目真凶）
+
+`src/client.js` 里 `loadReactDom()` 定义了、`bindReactDom` 也从模块 import 进来了，
+但 **`apply` 里从没调用过 `bindReactDom`**。于是 `composer-usage.js` 里 `reactDom`
+恒为 `undefined`，而展开面板的条件写作：
+
+```js
+openNow && typeof reactDom?.createPortal === 'function'
+  ? reactDom.createPortal(<Panel/>, document.body)
+  : null                       // ← 面板分支永远走这里
+```
+
+**面板根本不渲染** —— 但点击事件确实到了、`onClick` 确实被调用了、`open` 状态确实翻转了。
+只有"画出来"这一步静默失败。
+
+这类缺陷的特征：**纯逻辑测试测不到、构建期守卫测不到、真机只表现为功能缺失**。
+
+### 正确做法：静态断言「import 了就必须调用」
+
+在接线层（或独立的静态守卫测试）扫描 `client.js`，断言每个 import 进来的
+**注入/装载类**名字（`bind*` / `load*` / `create*` / `guard*` / `record*` / `write*`）
+都真的在 `apply` 体内被调用：
+
+```js
+const missing = mustCall.filter((name) => {
+  const callSite = new RegExp(`(?<!function\\s)(?<!const\\s)\\b${name}\\s*\\(`, 'g');
+  return [...code.matchAll(callSite)].length === 0;
+});
+assert.deepEqual(missing, [], `以下注入点从未被调用：${missing.join(', ')}`);
+```
+
+本仓库实现在 `test/inject-coverage.test.mjs`。**已用"故意注释掉一行"验证过它确实会变红**：
+
+```
+AssertionError: 以下注入点在 apply 里从未被调用（漏一行 = 功能静默失效）：bindReactDom
+```
+
+⚠️ 扫描时要在**剥掉注释与字符串**后的代码里找调用位置，且 import 要在**原始源码**上扫
+（import 语句多行、带引号路径，剥字符串会把路径抹掉）。
+
+### 怎么确诊"点了没反应"
+
+渲染进程里没有别的观测通道时，让控件**自己把事实写进 `localStorage`**——
+这是本机唯一可行的事后取证方式（DSH 桌面版的渲染进程**没开 CDP 端口**，
+只有 Host realm 可连，而那个 realm 里连 `document` 都没有）。要记的最小集：
+
+- 渲染了几次（`renders`）、挂载了几次（`mounts` —— 反复 remount 会让 state 每次重置）
+- 触发控件的**真实 DOM 几何**（尺寸/`pointerEvents`/`visibility`/`elementFromPoint` 命中谁）
+- 真实指针事件是否到达（`pointerdown` / `click` 在**捕获阶段**计数）
+- `open` 的**单调递增**计数（`openEver`）—— 单看 `open: false` 会被奇偶次点击抵消
+
+⚠️ **两条取证纪律**（都踩过）：
+
+1. **诊断自身绝不能派发合成事件。** 我先加过 `button.click()` 来"验证 handler 挂没挂"，
+   结果 `clicks` 计数里混进诊断自己的事件，**把"真实点击有没有到达"这个最关键的问题污染了**，
+   据此误判了一整轮。要验证就用**被动观测**。
+2. **按 sessionId 分桶。** `localStorage` 是**整个渲染进程共享**的，而
+   `conversation.input.left` 是 **per-session** 插槽 —— 多个会话都会写同一个键，
+   后写的覆盖先写的。我曾据此读到别的会话的 `provider: workbuddy`，
+   从而误判"当前会话不是 opendesign、控件没渲染"（用户当前会话恰恰就是）。
+
+---
+
 ## 10. 验证方法：改完不用重启（但有边界）
 
 ### 10.1 流程
@@ -466,7 +605,7 @@ import: (name) => { if (name === 'react') return react; /* … */ },
 
 | 改了什么 | 是否需要重启 |
 |---|---|
-| **客户端 bundle** | 不需要，DSH 会实时重载（实测约 30–90 秒；`HANDOFF` 记的是约 1–2 分钟） |
+| **客户端 bundle** | 不需要，DSH 会实时重载（实测约 30–90 秒） |
 | **host 代码 `src/index.js`** | **需要**——host 代码不重载 |
 | `dsh.profile.bundles` | **需要** |
 
@@ -628,15 +767,59 @@ await fM({ ctx, modules, manifest, ... });            // ← 再建 entry + 审�
 
 ---
 
-## 附：本文各条的事实出处
+## 附：本文各条的事实出处（都可自查）
 
-| 结论 | 出处 |
+本文的机制结论不是转述文档，而是**读源码 + 实测**得到的。复核时按这张表去查：
+
+| 结论 | 去哪查 |
 |---|---|
-| `ctx` 代理只放行 Context 成员 + `inject` 服务名 | `HANDOFF-inject-and-react-20261015.md` §2；asar `cannot get property "..." without inject` |
-| `web boot: N entry did not activate` 与三分支文案 | asar web boot 源码逐字比对（本文 §6） |
-| `importError` 只由 `prefetch()` / `import()` 写入 | asar `recordingImportError()` 调用点（本文 §6） |
-| `require` 的白名单边界（seed 表 9 模块） | 内核 `dsh-web-frontend` 的 `function gM()` + 官方 `dsh-client-*` 插件 require 去重核对（本文 §3） |
-| `external: decl.external ?? []` | asar 客户端 manifest 解析源码 |
-| `assertBundleShape()` 两件事与报错文案 | `src/build-client.mjs` 实现 + 实测 |
-| 「测试全绿、真机全废」 | `HANDOFF` §2「为什么测试没抓到」 |
-| 实时重载边界 | 工作区 `AGENTS.md` + `HANDOFF` §6 |
+| `ctx` 代理只放行 Context 成员 + `inject` 服务名 | asar 里 cordis `Context` 的 proxy `get` 陷阱；报错文案 `cannot get property "..." without inject` |
+| `web boot: N entry did not activate` 与三分支文案 | asar `lib/main.js` 的 web boot 审计函数（本文 §6 有逐字代码） |
+| `importError` 只由 `prefetch()` / `import()` 写入 | asar 里 `recordingImportError()` 的两个调用点（本文 §6） |
+| `require` 的白名单边界（seed 表 9 模块） | 前端 bundle 里的 `function gM()`；再把官方 `dsh-client-*` 插件的 `require` 去重交叉核对（本文 §3） |
+| `external: decl.external ?? []` | asar 客户端 manifest 解析源码（本文 §3） |
+| `plugins.bundle.config` 是插件详情页的配置区 | 内核 `dsh-client-ui-plugin-manager/lib/client.js` 详情页的 `renderSlot(...)` 调用（本文 §8.3 有逐字代码） |
+| `plugins.item` 用于官方插件 | 内核 `dsh-client-ui-plugin-manager/README.zh.md` 原文（本文 §8.3 引用） |
+| `assertBundleShape()` 两件事与报错文案 | 本仓库 `src/build-client.mjs` 实现 + 构建期实测 |
+| 「注入了但没调用」的静态守卫有效 | 本仓库 `test/inject-coverage.test.mjs`；**故意注释掉 `bindReactDom` 会让它变红**（已验证） |
+| 「测试全绿、真机全废」 | 本文 §9；根因是 mock 补上了实现搞错的契约 |
+| 实时重载边界 | 本文 §10 + 本机实测 |
+
+### 怎么把 asar 里的文件取出来自查
+
+```sh
+python3 - <<'PY'
+import struct, json
+p = '/usr/lib/deepseek-harness-desktop/resources/app.asar'   # 桌面版安装路径
+f = open(p, 'rb')
+vals = struct.unpack('<4I', f.read(16))
+f.seek(16)
+j = json.loads(f.read(vals[3]).decode('utf-8'))
+BASE = 8 + vals[1]                     # 数据区起点（不是 16+headerSize）
+
+def walk(node, path=''):
+    for name, v in node.get('files', {}).items():
+        cur = path + '/' + name
+        if 'files' in v:
+            yield from walk(v, cur)
+        else:
+            yield cur, v
+
+# 想取哪个就改这里
+targets = (
+    'dsh-client-ui-plugin-manager/lib/client.js',
+    'dsh-client-ui-primitives/lib/index.js',
+    'dsh-client-ui-settings-subagent/lib/client.js',
+)
+for target in targets:
+    for p_, v in walk(j):
+        if p_.endswith(target):
+            out = '/tmp/' + target.replace('/', '_')
+            with open(p, 'rb') as g:
+                g.seek(BASE + int(v['offset']))
+                open(out, 'wb').write(g.read(v['size']))
+            print(out)
+PY
+```
+
+`README.zh.md` 里还有设计意图与原文说明，和源码一起读能拿到完整上下文。

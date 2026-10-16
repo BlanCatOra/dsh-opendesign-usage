@@ -3,6 +3,21 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 文档
+
+- **`docs/plugin-development.md` 修正 4 处会误导人的内容**（2026-10-16 实测后同步）：
+  - §1：`inject` 举例更新为实际值，并说明 `configForms` 为什么是
+    「声明 + `ctx.get` 探测」并存的；
+  - §8.3 **整节重写**：旧版教「注册到 `settings.section`」是**错的** ——
+    那是官方领域基座的位置。改为 `plugins.bundle.config`（插件详情页），
+    并给出三个 `plugins.*` 子插槽的分工表、权威原文与官方范式；
+  - 新增 §9.5「注入了但**没调用**：最隐蔽的一类静默失效」—— 记录本次
+    「点击无效」的真因（`loadReactDom` 定义了但 `apply` 从没调用它，
+    导致面板的 `createPortal` 分支永不成立），含静态守卫写法与两条取证纪律
+    （诊断自身不得派发合成事件、诊断必须按 sessionId 分桶）。
+
 ## [0.2.0] - 2026-10-16
 
 按 `dsh-plugin-standards/docs/UI-STANDARDS.md` 与 DSH 插件开发规范**重构 UI 层**。

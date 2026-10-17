@@ -4,6 +4,18 @@
 人类请看 [README.md](./README.md)；想**用**这个插件看 [llms.txt](./llms.txt)；
 DSH 客户端插件的通用机制与事故复盘见 [docs/plugin-development.md](./docs/plugin-development.md)。
 
+## 版本基线（2026-10-18 更新）
+
+- 开发与验证基线：**DSH 0.2.1-rc.2**（内置 runtime `0.2.1-rc.2`；Arch 包 `0.2.1rc.2-1`）。
+- 支持范围：**>= 0.2.1-rc.1**，由 `package.json` 的 `engines.dsh: ">=0.2.1-rc.1"` 显式声明。
+- 宿主判定规则（`dsh-app-boot` 的 `unmetRequirements()`，源码已核实）：**声明了
+  `engines.dsh` 就由它单独决定**，`peerDependencies` 被忽略；否则才逐个检查
+  `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` peer。本仓库两者都写清，避免歧义。
+- 改 `engines.dsh` 是**破坏性**的：不满足时插件会在 profile 加载阶段被跳过
+  （`skippedBundles`）或让启动 preflight 禁用该行 —— 放宽范围前先确认真的验证过。
+- 版本相关原文只维护在：`package.json` 的 `engines.dsh`、README 的「前置条件」与
+  「兼容性」、以及本节。改版本号时几处一起看。
+
 ## 验证（改完必须跑）
 
 ```sh
@@ -24,11 +36,15 @@ npm run check   # 仅语法检查（不含构建，单独跑不够）
 - **只改 `src/`，然后 `node src/build-client.mjs`；永远不要手改 `lib/`。**
 - 构建期守卫 `assertBundleShape()`（`src/build-client.mjs`）做两件事：
   ① `new Function(code)` 解析产物，语法坏掉立即失败；
-  ② 扫 `require(...)`，只允许 seed 表 9 个模块：
+  ② 扫 `require(...)`，只允许白名单里的 **9 个模块**（rc.2 的 seed 表是 **11 项**，
+  多了 `zod` 与 `@tanstack/react-virtual`；本仓库**故意只放行更窄的 9 项** —— 越窄越安全，
+  不要因为 seed 表变宽就跟着放宽）：
   `react`、`react/jsx-runtime`、`react-dom`、`react-dom/client`、`@deepseek-ai/cordis`、
   `@deepseek-ai/dsh-client-store`、`@deepseek-ai/dsh-client-ui-slots`、
   `@deepseek-ai/dsh-client-ui-primitives`、`@deepseek-ai/dsh-client-ui-dockkit`。
   超出即**构建失败**。
+  ⚠️ 定位 seed 表要**按 `staticModules` 找**，不要 grep 函数名 —— rc.2 里它是 `SZ()`，
+  以前是 `gM()`，每次构建都可能变。
 - `package.json` 的 `dsh.client.immediately: true` 是 **host 侧 manifest 字段**，
   改完要**重启 DSH 应用**才生效（不属于客户端 bundle 的热重载）。
 - 打包器只支持窄语法子集（静态 `import` / `export` 声明），不支持的写法会**显式报错**；
@@ -44,7 +60,8 @@ npm run check   # 仅语法检查（不含构建，单独跑不够）
    `test/inject-coverage.test.mjs` 会双向静态断言（每个 `ctx.<service>` 都在 `inject` 里，且没有多余项）。
 2. **`apply` 绝不允许把异常抛出去。** 每个表面各自 `guardStep`，失败只降级 + 记录：
    `console.error` + 写 `localStorage` 启动报告（用 `~/.dsh/bin/dsh-boot-report --key odp` 读）。
-3. **`require` 只允许 seed 表 9 个模块**（名单见「产物」）。
+3. **`require` 只允许白名单里的 9 个模块**（名单见「产物」；rc.2 的 seed 表有 11 项，
+   我们故意用更窄的 9 项）。
    宿主只读 `package.json` 的 `dsh.client.external`，**不扫描 bundle 文本** ——
    不要为"注释里出现 require 字面量"做无效修改。
 4. **插件设置注册到 `plugins.bundle.config`（key = 插件包名）= 插件详情页配置区。**

@@ -20,7 +20,7 @@
 |---|---|---|
 | 1 | `ctx.<service>` 只放行**插件自己导出的 `inject`** 里声明过的服务名；探测可能不存在的服务用 `ctx.get()` | 整个 DSH 白屏，crash log 只有 `<包名>: failed`，无堆栈 |
 | 2 | `apply` **绝不允许把异常抛出去**；每个表面各自守卫，失败只降级 + 记录 | 同上：一个插件的接线错误让整站白屏 |
-| 3 | `require` **只允许 seed 表 9 个模块**（含 `@deepseek-ai/dsh-client-ui-primitives`）；越界即构建失败 | 整站白屏（模块不在冻结表里，`makeRequire` 抛错） |
+| 3 | `require` **只允许 seed 表白名单里的模块**（含 `@deepseek-ai/dsh-client-ui-primitives`；本仓库定为 9 项，rc.2 宿主 seed 表是 11 项）；越界即构建失败 | 整站白屏（模块不在冻结表里，`makeRequire` 抛错） |
 
 下面逐条展开。
 
@@ -156,15 +156,33 @@ host 侧「可能没有 `webServer`」的场景**只走** `ctx.get(...)`，不�
 
 ---
 
-## 3. `require` 的边界：只有 seed 表 9 个模块
+## 3. `require` 的边界：只用 seed 表白名单里的模块
 
 > ⚠️ **本节在 2026-10-16 被修正过。** 旧版本写的是「禁止 `require` 任何 Harness Client 包，
 > 只能抄 markup/CSS」，**那个结论是错的**（把白屏事故归错了因）。见下面「旧结论错在哪」。
 
-### 唯一红线：seed 表 9 个模块
+### 唯一红线：seed 表白名单
 
-前端 boot 的 seed 表（`dsh-web-frontend` 的 `index-*.js` 里 `function gM()`）被传给
-`__ModuleLoader__.create({ staticModules: gM() })`，内容**恰好**是这 9 个：
+前端 boot 的 seed 表被传给 `__ModuleLoader__.create({ staticModules: ... })`。
+
+⚠️ **怎么定位它**：在 `dsh-web-frontend` 的 `index-*.js` 里搜 `staticModules`（或搜
+`@deepseek-ai/dsh-client-ui-dockkit` 这个条目），**不要 grep 函数名** —— 那个返回 seed 表的
+函数在 rc.2 里叫 `SZ()`，此前叫 `gM()`，**每次构建都会变**（2026-10-18 实测）。
+
+**rc.2 的 seed 表有 11 项**（`0.2.1-rc.2` 实测）：
+
+```js
+{ react, "react/jsx-runtime", "react-dom", "react-dom/client",
+  "@deepseek-ai/cordis",
+  zod,                              // ← rc.2 新增
+  "@tanstack/react-virtual",        // ← rc.2 新增
+  "@deepseek-ai/dsh-client-store",
+  "@deepseek-ai/dsh-client-ui-slots",
+  "@deepseek-ai/dsh-client-ui-primitives",
+  "@deepseek-ai/dsh-client-ui-dockkit" }
+```
+
+**本仓库的白名单仍是更窄的 9 项**（不放行 `zod` / `@tanstack/react-virtual`）：
 
 ```js
 react
@@ -178,8 +196,12 @@ react-dom/client
 @deepseek-ai/dsh-client-ui-dockkit
 ```
 
+⚠️ **不要因为宿主 seed 表变宽就跟着放宽**：放行面越窄越好。宿主新增的项对我们没用，
+一旦 require 它们，将来宿主移除就会白屏，而我们没有任何收益。这 9 项由
+`assertBundleShape()` 在**构建期**强制（§5）。
+
 **这 9 个之外的 `@deepseek-ai/*` 一律不可 require** —— 它们不在冻结表里，
-`makeRequire` 找不到就抛错。这 9 个由 `assertBundleShape()` 在**构建期**强制（§5）。
+`makeRequire` 找不到就抛错。
 
 ### 旧结论错在哪
 
@@ -776,7 +798,7 @@ await fM({ ctx, modules, manifest, ... });            // ← 再建 entry + 审�
 | `ctx` 代理只放行 Context 成员 + `inject` 服务名 | asar 里 cordis `Context` 的 proxy `get` 陷阱；报错文案 `cannot get property "..." without inject` |
 | `web boot: N entry did not activate` 与三分支文案 | asar `lib/main.js` 的 web boot 审计函数（本文 §6 有逐字代码） |
 | `importError` 只由 `prefetch()` / `import()` 写入 | asar 里 `recordingImportError()` 的两个调用点（本文 §6） |
-| `require` 的白名单边界（seed 表 9 模块） | 前端 bundle 里的 `function gM()`；再把官方 `dsh-client-*` 插件的 `require` 去重交叉核对（本文 §3） |
+| `require` 的白名单边界（本仓库 9 项；rc.2 宿主 seed 表 11 项） | 前端 bundle 里搜 `staticModules`（**不要 grep 函数名**，rc.2 里是 `SZ()`、旧版是 `gM()`）；再把官方 `dsh-client-*` 插件的 `require` 去重交叉核对（本文 §3） |
 | `external: decl.external ?? []` | asar 客户端 manifest 解析源码（本文 §3） |
 | `plugins.bundle.config` 是插件详情页的配置区 | 内核 `dsh-client-ui-plugin-manager/lib/client.js` 详情页的 `renderSlot(...)` 调用（本文 §8.3 有逐字代码） |
 | `plugins.item` 用于官方插件 | 内核 `dsh-client-ui-plugin-manager/README.zh.md` 原文（本文 §8.3 引用） |

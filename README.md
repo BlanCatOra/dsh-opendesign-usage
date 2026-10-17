@@ -97,7 +97,8 @@ OD · 90% · 97%
 
 ### 前置条件
 
-- 一个可用的 DSH 安装（本插件在 **0.2.1-alpha.2** 上开发与验证）；
+- 一个可用的 DSH 安装，**版本 ≥ 0.2.1-rc.1**（本插件在 **0.2.1-rc.2** 上开发与验证；
+  更早的版本不保证可用 —— `package.json` 的 `engines.dsh` 已显式声明 `>=0.2.1-rc.1`）；
 - 想在读数额度的话，需要一个 Open Design 账号（免费注册即可）。
 
 ### 安装插件
@@ -225,8 +226,10 @@ Open Design 控制台 API
 
 ## 兼容性
 
-- **DSH**：0.2.1-alpha.2（开发与验证版本）。插件用到的插槽与官方组件都在
-  `dsh.client.inject` 里声明；
+- **DSH**：**≥ 0.2.1-rc.1**（开发与验证版本 **0.2.1-rc.2**，内置 runtime 同为 `0.2.1-rc.2`）。
+  `package.json` 的 `engines.dsh: ">=0.2.1-rc.1"` 显式声明了这个范围；按 rc.2 的兼容判定
+  规则，**声明了 `engines.dsh` 就由它单独决定**，`peerDependencies` 里没有 DSH 包，不受影响。
+  插件用到的插槽与官方组件都在 `dsh.client.inject` 里声明；
 - **Node**：`^22.19.0 || >=24.0.0`；
 - **平台**：`web`（DSH 的 Web GUI）。
 
@@ -249,7 +252,9 @@ node --test test/*.test.mjs # 单元测试
 ⚠️ `lib/client.js` 是**生成物**，不要手改；改 `src/` 后重新构建。
 
 构建脚本带**产物守卫**（`src/build-client.mjs` 的 `assertBundleShape()`）：
-产物必须能被解析，且 `require` 只允许 seed 表里的 9 个模块。
+产物必须能被解析，且 `require` 只允许 seed 表白名单里的 9 个模块
+（rc.2 的 seed 表有 11 项，新增 `zod` 与 `@tanstack/react-virtual`；本仓库白名单
+仍是更窄的 9 项，越窄越安全）。
 坏产物**在构建期就失败**，不会落盘 —— DSH 客户端插件的坏产物表现是整站白屏
 且 crash log 没有堆栈，必须靠构建期拦住。
 

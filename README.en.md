@@ -108,7 +108,9 @@ polling in the background.
 
 ### Requirements
 
-- A working DSH installation (developed and verified on **0.2.1-alpha.2**);
+- A working DSH installation, **version ≥ 0.2.1-rc.1** (developed and verified on **0.2.1-rc.2**;
+  earlier versions are not guaranteed to work — `engines.dsh` in `package.json` declares
+  `>=0.2.1-rc.1` explicitly);
 - An Open Design account (a free tier is enough) if you want the quota readout.
 
 ### Add the plugin
@@ -248,7 +250,10 @@ tracks slots by id, and unregister-then-register races), whereas unconditional r
 
 ## Compatibility
 
-- **DSH**: 0.2.1-alpha.2 (the version this was developed and verified against). Every slot and
+- **DSH**: **≥ 0.2.1-rc.1** (developed and verified on **0.2.1-rc.2**, whose bundled runtime is
+  also `0.2.1-rc.2`). `engines.dsh: ">=0.2.1-rc.1"` in `package.json` states this range; under
+  the rc.2 compatibility rules **a declared `engines.dsh` decides on its own**, and no DSH package
+  appears in `peerDependencies`, so nothing else is consulted. Every slot and
   official component the plugin uses is declared in `dsh.client.inject`;
 - **Node**: `^22.19.0 || >=24.0.0`;
 - **Platform**: `web` (DSH's Web GUI).
@@ -273,7 +278,8 @@ node --test test/*.test.mjs # unit tests
 
 The build script enforces a **bundle guard** (`assertBundleShape()` in `src/build-client.mjs`):
 the artifact must parse, and its `require` calls may only reference the nine modules in the seed
-table. A broken artifact **fails at build time** and never reaches disk — a broken DSH client
+table allowlist (the rc.2 seed table has 11 entries — `zod` and `@tanstack/react-virtual` were
+added; this repo keeps the narrower 9-entry list on purpose, narrower is safer). A broken artifact **fails at build time** and never reaches disk — a broken DSH client
 bundle shows up as a blank application with no stack trace in the crash log, so this has to be
 caught during the build.
 

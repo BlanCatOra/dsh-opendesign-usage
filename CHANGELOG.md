@@ -5,6 +5,23 @@
 
 ## [Unreleased]
 
+### 兼容性
+
+- **声明 DSH 版本范围：`engines.dsh: ">=0.2.1-rc.1"`**（2026-10-18）。开发与验证基线从
+  `0.2.1-alpha.2` 提升到 **`0.2.1-rc.2`**（内置 runtime `0.2.1-rc.2`，Arch 包
+  `0.2.1rc.2-1`）。宿主判定规则（`dsh-app-boot` 的 `unmetRequirements()`，源码核实）：
+  **声明了 `engines.dsh` 就由它单独决定**，不再看 `peerDependencies`。本插件的
+  `peerDependencies` 里本来就没有 DSH 包，所以显式声明消除了歧义。
+- **rc.2 兼容性结论**：rc.1 的破坏性变更均未踩到（`invariant` 导出移除、
+  `toolPresentation: both` 移除、`azure-openai-responses` 改名、输入区 `stats` 拆分、
+  agent-instructions 的 `dshHome`）。插件用到的插槽在 rc.2 全部仍存在；
+  会话格式 v4 → v4、workspace 存储 v2 → v2，**数据零迁移**。
+- **文档同步 rc.2 的 seed 表变化**：宿主前端 seed 表从 **9 项增至 11 项**
+  （新增 `zod`、`@tanstack/react-virtual`）。本仓库的 `SEED_MODULES` 白名单
+  **仍保持更窄的 9 项**（越窄越安全，宿主新增项我们用不上）。同时修正文档里
+  「seed 表函数名 = `gM()`」的定位法 —— rc.2 里它叫 `SZ()`，**每次构建都会变**，
+  已改成「搜 `staticModules`，不要 grep 函数名」。
+
 ### 测试
 
 - **新增 `test/agent-facing.test.mjs`（7 条断言）**：把「面向 agent 的仓库规范」从

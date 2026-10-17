@@ -216,13 +216,18 @@ export async function build({ entry, root, packageId, output, banner = '' }) {
 }
 
 /**
- * 前端 boot 的 **seed 表**（`staticModules` / `gM()`）—— 冻结基座模块白名单。
+ * 前端 boot 的 **seed 表白名单**（`staticModules`）—— 冻结基座模块。
  *
- * 只有这 9 个模块能出现在产物的 `require(...)` 里：它们是 DSH 前端启动时**先于**
+ * 只有白名单里的 9 个模块能出现在产物的 `require(...)` 里：它们是 DSH 前端启动时**先于**
  * 一切插件装载进冻结模块表的基座，`require` 必定成功。
  *
+ * ⚠️ **宿主 seed 表会随版本变宽**：0.2.1-rc.2 实测是 **11 项**（新增 `zod` 与
+ * `@tanstack/react-virtual`）。本仓库**故意只放行更窄的 9 项** —— 我们不需要那两项，
+ * 放行面越窄越安全（宿主将来移除时不会连带白屏）。
+ * ⚠️ 定位宿主 seed 表要搜 `staticModules`，**不要 grep 函数名**：rc.2 里是 `SZ()`、
+ * 旧版是 `gM()`，每次构建都可能变。
+ *
  * 规范出处：`~/Projects/dsh-plugin-standards/docs/UI-STANDARDS.md` §0.1 与 §4。
- * 其中 §4 给了这张名单，并明说「**只允许这 9 个 —— 超出即构建失败，不靠人记**」。
  *
  * ⚠️ 旧名单只有 react 系 4 个，注释里写着「官方规范禁止第三方插件加载 Harness Client 包」
  * —— 那个结论**已作废**：它是把白屏事故**归错了因**（真因是漏声明插件的 `inject`
@@ -245,7 +250,8 @@ const SEED_MODULES = new Set([
 ]);
 
 /**
- * 构建期守卫：产物必须是可解析的 JS，且只 require seed 表中的 9 个基座模块。
+ * 构建期守卫：产物必须是可解析的 JS，且只 require 白名单里的 9 个基座模块
+ * （宿主 seed 表在 rc.2 有 11 项，本仓库只放行更窄的 9 项）。
  *
  * 为什么放在构建里而不只放测试：这两类错误都不是逻辑错误，而是**产物层面**的
  * 结构性损坏，而真机加载的是 `lib/client.js`。构建期直接拦下，坏产物根本不会落盘。

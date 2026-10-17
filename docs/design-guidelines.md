@@ -23,22 +23,29 @@
 ### 为什么（内核事实，不是风格偏好）
 
 1. **它是冻结基座模块，`require` 必定成功。**
-   前端 boot 的 seed 表（`dsh-web-frontend` 的 `index-*.js` 里 `function gM()`）：
+   前端 boot 的 seed 表被传给 `__ModuleLoader__.create({ staticModules: ... })`。
+   ⚠️ **定位它要搜 `staticModules`**（或搜 `dsh-client-ui-dockkit` 条目），
+   **不要 grep 函数名** —— rc.2 里叫 `SZ()`、此前叫 `gM()`，每次构建都可能变（2026-10-18 实测）。
 
    ```js
+   // rc.2（0.2.1-rc.2）实测为 11 项
    { react, "react/jsx-runtime", "react-dom", "react-dom/client",
-     "@deepseek-ai/cordis", "@deepseek-ai/dsh-client-store",
+     "@deepseek-ai/cordis",
+     zod,                             // ← rc.2 新增
+     "@tanstack/react-virtual",       // ← rc.2 新增
+     "@deepseek-ai/dsh-client-store",
      "@deepseek-ai/dsh-client-ui-slots",
      "@deepseek-ai/dsh-client-ui-primitives",     // ← 本包
      "@deepseek-ai/dsh-client-ui-dockkit" }
    ```
 
-   它被传给 `__ModuleLoader__.create({ staticModules: gM() })`。
-   **这 9 个之外的 `@deepseek-ai/*` 一律不可 require。**
+   **本仓库的白名单故意只放行更窄的 9 项**（不含 `zod` / `@tanstack/react-virtual`）：
+   **seed 表之外的 `@deepseek-ai/*` 一律不可 require**；宿主新增的项我们也用不上，
+   放行面越窄越安全（宿主将来移除时不会连带白屏）。
 
 2. **官方自己就是这么做的** —— 内核里 10 个官方 `dsh-client-ui-settings-*` 有 **9 个**
    `require` 了它（唯一的例外 `settings-plugins` 是纯壳、不渲染控件）。
-   把内核里所有官方 `dsh-client-*` 插件的 require 去重后，**没有一个落在 seed 表 9 个之外**。
+   把内核里所有官方 `dsh-client-*` 插件的 require 去重后，**没有一个落在 seed 表之外**。
 
 3. **自己抄的组件必然与宿主漂移。** primitives 消费 `--dsw-*` 设计 token，并处理了
    `focusWithoutRing` / `useModalLayer` / `observeComposition`（IME）等细节 ——
@@ -59,7 +66,7 @@
   （`cannot get property "X" without inject` → fiber FAILED → web boot 白屏），
   与 `require` primitives **无关**。详见
   [`docs/plugin-development.md`](plugin-development.md) 的 inject 与启动机制两节。
-- 结论：**用 primitives**。唯一的红线是 **seed 表 9 模块白名单**（构建期强制）。
+- 结论：**用 primitives**。唯一的红线是 **seed 表白名单**（本仓库定为 9 项，构建期强制）。
 
 ---
 
@@ -208,7 +215,8 @@ t('usage.label')     // ✅
 
 ## 9. 验收清单
 
-- [ ] 客户端 `require` 只出现 **seed 表 9 个模块**（`assertBundleShape()` 构建期强制）
+- [ ] 客户端 `require` 只出现 **白名单里的 9 个模块**（rc.2 宿主 seed 表有 11 项；
+      本仓库只放行 9 项，`assertBundleShape()` 构建期强制）
 - [ ] 控件、菜单、开关、输入框、按钮、Tooltip **全部来自 `primitives`**，无自写 SVG / dropdown / 开关
 - [ ] 只读信息**没有**被套进 `Menu`
 - [ ] 设置注册在 **`plugins.bundle.config`**（key = 插件包名）—— 那是**插件详情页**的配置区；

@@ -1,11 +1,11 @@
 /**
- * dsh-opendesign-usage —— 插件详情页的配置卡片（`plugins.item`）。
+ * dsh-opendesign-usage —— 插件详情页的配置卡片（`plugins.bundle.config`）。
  *
  * 这是 `src/settings-section.js`（867 行自写 UI）的替代实现。控件一律取自
  * `@deepseek-ai/dsh-client-ui-primitives`，本文件**不再自绘**开关 / 输入框 /
  * 密码框 / 按钮 / 徽章。规范出处：
  *  - §0.1 控件只能来自 primitives；
- *  - §0.2 插件设置注册到 `plugins.item`（不是 `settings.section`）；
+ *  - §0.2 插件设置注册到 `plugins.bundle.config`（不是 `plugins.item`、不是 `settings.section`）；
  *  - §1.3 渲染期绝不允许抛错（抛一次插槽条目就被 `SlotErrorBoundary` 永久撤销）。
  *
  * 结构逐字照抄内核官方实现 `dsh-client-ui-settings-subagent/lib/client.js`（已解包在

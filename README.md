@@ -19,6 +19,10 @@
 
 <p align="center"><b>在 DSH 输入框里看 Open Design 的套餐额度与本会话 token 用量。</b></p>
 
+> 🤖 **给 AI agent**：动手改这个仓库之前，先读 [AGENTS.md](./AGENTS.md)（**怎么改**：
+> 验证命令、硬性约束、本仓库特有的坑）与 [llms.txt](./llms.txt)（**怎么用**：能力与文档索引）。
+> 人类可以忽略这一行，直接往下看。
+
 <p align="center">
   <a href="README.en.md">English</a> ·
   <a href="#安装">安装</a> ·

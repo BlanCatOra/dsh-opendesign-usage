@@ -36,7 +36,7 @@ const CONTEXT_MEMBERS = new Set([
 
 /** 只扫描浏览器侧模块（Host 侧的 index.js/config.js 有自己的 inject 语义）。 */
 // ⚠️ 2026-10-16 重构：`settings-section.js` → `plugin-settings-card.js`（设置卡片改用
-// primitives 并迁到 `plugins.item`）。新文件必须在这个集合里，否则它引入的
+// primitives 并迁到 `plugins.bundle.config`）。新文件必须在这个集合里，否则它引入的
 // `ctx.<service>` 不会被静态守卫覆盖 —— 那正是本项目白屏事故的形状。
 const CLIENT_ONLY = new Set(['client.js', 'composer-usage.js', 'plugin-settings-card.js', 'flags-store.js', 'locale.js', 'constants.js', 'boot-diagnostics.js']);
 

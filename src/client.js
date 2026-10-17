@@ -5,8 +5,9 @@
  *
  *  1. **`conversation.input.left`** —— 输入框工具行的只读用量控件，随会话的
  *     provider 选择由 gate 决定是否渲染；
- *  2. **`plugins.item`** —— 「插件」侧栏页里本插件条目下的配置卡片
- *     （新规范：插件自己的设置**不放** `settings.section`，见 `UI-STANDARDS.md` §0.2）。
+ *  2. **`plugins.bundle.config`** —— 「插件」侧栏页里本插件详情页的配置卡片
+ *     （key = 插件包名；新规范：插件自己的设置**不放** `settings.section`，
+ *     也**不是** `plugins.item`，见 `UI-STANDARDS.md` §0.2）。
  *
  * 控件的渲染数据由三样东西组成：
  *
@@ -55,8 +56,8 @@ export const name = PLUGIN_ID;
  * ⚠️ 必须与 `apply` 里真正用到的 `ctx.*` 服务一一对应（`test/inject-coverage.test.mjs`
  * 会静态断言这一点，且反向断言没有无用项）。
  *
- * `configForms` 是 2026-10-16 重构后**新增**的：设置卡片改为注册进 `plugins.item`
- * 后，官方范式（内核 `dsh-client-ui-settings-subagent`，`inject` =
+ * `configForms` 是 2026-10-16 重构后**新增**的：设置卡片改为注册进
+ * `plugins.bundle.config`（插件详情页）后，官方范式（内核 `dsh-client-ui-settings-subagent`，`inject` =
  * `["slots","locale","remote","remote.session","configForms"]`）要求用
  * `ctx.configForms.whileServed(...)` 跟随命名空间的上线/下线边沿 ——
  * 那是"读服务属性"，不写进 `inject` 会同步抛 `cannot get property "configForms" without inject`。
@@ -300,12 +301,12 @@ function applySources(ctx, failures) {
     );
   });
 
-  /* ── 5. 插件详情页的配置卡片（`plugins.item`） ─────────────────────
+  /* ── 5. 插件详情页的配置卡片（`plugins.bundle.config`） ─────────────
    *
    * ⚠️ 2026-10-16 重构：**不再注册 `settings.section`**。新规范
    * （`UI-STANDARDS.md` §0.2）要求插件配置放在「插件」侧栏页里自己的条目下，
-   * 「设置」总页只保留只读的插件列表。`plugins.item` 是 plugin-manager 声明的
-   * list/root 子插槽（权威列表见 `README.zh.md`）。
+   * 「设置」总页只保留只读的插件列表。`plugins.bundle.config` 是 plugin-manager
+   * 以**插件包名**为键、用 `view:"page"` 渲染在详情页里的槽（权威列表见 `README.zh.md`）。
    *
    * 注册结构逐字照抄内核官方实现 `dsh-client-ui-settings-subagent/lib/client.js`
    * （line 839-847）：

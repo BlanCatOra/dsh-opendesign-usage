@@ -7,6 +7,18 @@
 
 ### 文档
 
+- **补齐「面向 agent 的仓库」三件套**（2026-10-17，按
+  `dsh-plugin-standards/docs/AGENT-FACING-STANDARDS.md`）：
+  - 新增根目录 **`AGENTS.md`**：验证命令、构建产物、硬性约束、禁区、提交规范、
+    本仓库特有的坑（每条都有实测依据）；
+  - 新增根目录 **`llms.txt`**：H1 + 一句话摘要 + 指向 markdown 的文档索引；
+  - `README.md` / `README.en.md` 正文靠前处加**指路行**（README 是给人看的，
+    agent 需要先被指到上面两个文件）。
+- **同步数处过时注释**：`src/client.js`、`src/plugin-settings-card.js`、
+  `test/inject-coverage.test.mjs`、`test/settings.test.mjs` 里仍把插件设置插槽写成
+  `plugins.item`；实际注册的是 **`plugins.bundle.config`**（2026-10-16 二次修正只改了
+  文档与注册代码，注释漏了）。
+
 - **`docs/plugin-development.md` 修正 4 处会误导人的内容**（2026-10-16 实测后同步）：
   - §1：`inject` 举例更新为实际值，并说明 `configForms` 为什么是
     「声明 + `ctx.get` 探测」并存的；

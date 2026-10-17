@@ -20,6 +20,11 @@
 
 <p align="center"><b>See your Open Design plan quota and this session's token usage right in the DSH composer.</b></p>
 
+> 🤖 **For AI agents**: before changing this repo, read [AGENTS.md](./AGENTS.md)
+> (how to change it: verification commands, hard constraints, gotchas) and
+> [llms.txt](./llms.txt) (what it does and where the docs are).
+> Humans can skip this line.
+
 <p align="center">
   <a href="README.md">中文</a> ·
   <a href="#install">Install</a> ·

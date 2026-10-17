@@ -3,7 +3,7 @@
  *
  * ⚠️ 2026-10-16 重构后本文件的测试对象变了：
  *   - 旧：`src/settings-section.js` 的 `SettingsSection`（全自写 UI，注册在 `settings.section`）
- *   - 新：`src/plugin-settings-card.js` 的 `SettingsCard`（用 `primitives`，注册在 `plugins.item`）
+ *   - 新：`src/plugin-settings-card.js` 的 `SettingsCard`（用 `primitives`，注册在 `plugins.bundle.config`）
  *
  * 旧的 `createSettingsFace` / `normalizeSettings` / `isWritable` / `snapshotValueOf`
  * 是**旧实现内部**的辅助函数（因为旧卡片自己管作用域）。新卡片把这些交给了官方的

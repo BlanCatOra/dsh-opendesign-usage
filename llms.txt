@@ -1,0 +1,25 @@
+# dsh-opendesign-usage
+
+> 一个独立的 DeepSeek Harness（DSH）第三方 bundle 插件：在输入框工具行显示 Open Design
+> 套餐额度两个窗口（5 小时 / 7 天）的剩余百分比，点开面板可看钱包余额与本会话 token 用量。
+> 读数只在会话选中 `opendesign` 模型时出现；三个功能都能在插件详情页自行开关。
+
+## 安装与使用
+
+- [README.md](README.md): 中文说明 —— 功能、安装步骤、获取 workspaceId / sessionCookie、工作原理
+- [README.en.md](README.en.md): English README —— same content in English
+
+## 参考
+
+- [docs/design-guidelines.md](docs/design-guidelines.md): UI 规范 —— 必须用 `dsh-client-ui-primitives`、只用主题 token、交互跟宿主一致
+- [docs/plugin-development.md](docs/plugin-development.md): DSH 客户端插件开发规范 —— 两套 `inject`、`apply` 不抛错、seed 表白名单、错误信息解读
+
+## 变更与署名
+
+- [CHANGELOG.md](CHANGELOG.md): 版本变更记录（Keep a Changelog）
+- [CREDITS.md](CREDITS.md): 署名、AI 协作声明、第三方来源
+- [LICENSE](LICENSE): MIT 许可
+
+## 可选
+
+- [AGENTS.md](AGENTS.md): 给要改这个仓库源码的 agent 看 —— 验证命令、构建产物、硬性约束、本仓库特有的坑

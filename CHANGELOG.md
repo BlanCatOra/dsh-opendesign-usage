@@ -7,7 +7,7 @@
 
 ### 兼容性
 
-- **声明 DSH 版本范围：`engines.dsh: ">=0.2.1-rc.1"`**（2026-10-18）。开发与验证基线从
+- **声明 DSH 版本范围：`engines.dsh: ">=0.2.0-0"`**（2026-10-18）。开发与验证基线从
   `0.2.1-alpha.2` 提升到 **`0.2.1-rc.2`**（内置 runtime `0.2.1-rc.2`，Arch 包
   `0.2.1rc.2-1`）。宿主判定规则（`dsh-app-boot` 的 `unmetRequirements()`，源码核实）：
   **声明了 `engines.dsh` 就由它单独决定**，不再看 `peerDependencies`。本插件的

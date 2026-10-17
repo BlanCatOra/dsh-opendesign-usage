@@ -108,9 +108,9 @@ polling in the background.
 
 ### Requirements
 
-- A working DSH installation, **version ≥ 0.2.1-rc.1** (developed and verified on **0.2.1-rc.2**;
+- A working DSH installation, **version ≥ 0.2.0** (developed and verified on **0.2.1-rc.2**;
   earlier versions are not guaranteed to work — `engines.dsh` in `package.json` declares
-  `>=0.2.1-rc.1` explicitly);
+  `>=0.2.0-0` explicitly);
 - An Open Design account (a free tier is enough) if you want the quota readout.
 
 ### Add the plugin
@@ -250,8 +250,8 @@ tracks slots by id, and unregister-then-register races), whereas unconditional r
 
 ## Compatibility
 
-- **DSH**: **≥ 0.2.1-rc.1** (developed and verified on **0.2.1-rc.2**, whose bundled runtime is
-  also `0.2.1-rc.2`). `engines.dsh: ">=0.2.1-rc.1"` in `package.json` states this range; under
+- **DSH**: **≥ 0.2.0** (developed and verified on **0.2.1-rc.2**, whose bundled runtime is
+  also `0.2.1-rc.2`). `engines.dsh: ">=0.2.0-0"` in `package.json` states this range; under
   the rc.2 compatibility rules **a declared `engines.dsh` decides on its own**, and no DSH package
   appears in `peerDependencies`, so nothing else is consulted. Every slot and
   official component the plugin uses is declared in `dsh.client.inject`;

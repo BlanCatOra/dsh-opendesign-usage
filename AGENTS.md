@@ -7,7 +7,7 @@ DSH 客户端插件的通用机制与事故复盘见 [docs/plugin-development.md
 ## 版本基线（2026-10-18 更新）
 
 - 开发与验证基线：**DSH 0.2.1-rc.2**（内置 runtime `0.2.1-rc.2`；Arch 包 `0.2.1rc.2-1`）。
-- 支持范围：**>= 0.2.1-rc.1**，由 `package.json` 的 `engines.dsh: ">=0.2.1-rc.1"` 显式声明。
+- 支持范围：**>= 0.2.0**，由 `package.json` 的 `engines.dsh: ">=0.2.0-0"` 显式声明。
 - 宿主判定规则（`dsh-app-boot` 的 `unmetRequirements()`，源码已核实）：**声明了
   `engines.dsh` 就由它单独决定**，`peerDependencies` 被忽略；否则才逐个检查
   `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` peer。本仓库两者都写清，避免歧义。

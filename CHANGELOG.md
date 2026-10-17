@@ -5,8 +5,18 @@
 
 ## [Unreleased]
 
+### 测试
+
+- **新增 `test/agent-facing.test.mjs`（7 条断言）**：把「面向 agent 的仓库规范」从
+  纸面要求变成 `npm test` 的门槛 —— 断言 `AGENTS.md` / `llms.txt` 存在且有实质内容、
+  结构合规、README 所有语言版本在前 1/3 处有相对链接指路、链接目标真实存在，
+  并对这几个会公开的文件做脱敏扫描（私人邮箱 / 内网 IP / 本机绝对路径）。
+
 ### 文档
 
+- **`AGENTS.md` 补「工作区说明（软链）」**：本仓库在「dsh插件」工作区里以单向软链
+  `~/Projects/dsh-plugin/plugins/dsh-opendesign-usage` 出现；软链不存副本、往里写就是改真身。
+  同时把验证命令里的测试数量更新为 103 项。
 - **补齐「面向 agent 的仓库」三件套**（2026-10-17，按
   `dsh-plugin-standards/docs/AGENT-FACING-STANDARDS.md`）：
   - 新增根目录 **`AGENTS.md`**：验证命令、构建产物、硬性约束、禁区、提交规范、

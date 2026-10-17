@@ -7,7 +7,7 @@ DSH 客户端插件的通用机制与事故复盘见 [docs/plugin-development.md
 ## 验证（改完必须跑）
 
 ```sh
-npm test        # = node src/build-client.mjs + node --test test/*.test.mjs（96 项），一条命令
+npm test        # = node src/build-client.mjs + node --test test/*.test.mjs（103 项），一条命令
 npm run check   # 仅语法检查（不含构建，单独跑不够）
 ```
 
@@ -122,6 +122,22 @@ git -c user.name="blancatora" -c user.email="blancatora@agent.qq.com" \
 10. **构建器语法子集很窄**：不支持的语法**显式报错**（不会静默产出坏 bundle）；
     但它只做文本变换，不理解的边界情况先写一个最小用例验证。
 
+## 工作区说明（软链，单向）
+
+本仓库在工作区「dsh插件」里以**软链**出现：
+
+```
+~/Projects/dsh-plugin/plugins/dsh-opendesign-usage → ~/Projects/dsh-opendesign-usage
+```
+
+- 软链是**单向**的：改真身（`~/Projects/dsh-opendesign-usage`）软链跟着变；
+  软链里**不存副本**，往软链里写就是在改真身。
+- 构造上不存在"只写在工作区、不进仓库"的文件：在软链路径下新建的文件会落在真身里，
+  直接出现在 `git status` 里。要放**只属于工作区**的东西，放到软链之外。
+- 工作区同层的 `docs/`、`skills/` 也是指向外部真身的软链（规范文档与插件开发技能），
+  不是本仓库的目录，`git` 不会跟踪它们。
+- 在软链路径或真身路径下跑 `npm test` / 构建，效果完全相同（Node 解析的是真实路径）。
+
 ## 目录地图
 
 | 路径 | 作用 |
@@ -132,5 +148,5 @@ git -c user.name="blancatora" -c user.email="blancatora@agent.qq.com" \
 | `src/plugin-settings-card.js` | 配置卡片（全部用 `primitives`） |
 | `src/config.js` | schemastery 配置（全部 `volatile()` 活引用） |
 | `src/build-client.mjs` | 打包器 + `assertBundleShape()` 产物守卫 |
-| `test/` | 6 个测试文件；接线层测真实产物 |
+| `test/` | 7 个测试文件；接线层测真实产物，`agent-facing.test.mjs` 守仓库规范 |
 | `docs/` | 规范文档（开发红线、UI 规范） |
